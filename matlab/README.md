@@ -2,14 +2,41 @@
 
 ### How to use
 
-The only requirment is build mxnet to get `lib/libmxnet.so`. Sample usage
+MXNet needs to be built so that the `lib/libmxnet.so` is available, which can be done by:
 
-- Load model and data:
+```bash
+cd ..
+make
+```
+
+The pre-trained `Inception-BN` should be downloaded.  This data will be saved in the `./data` folder:
+
+```bash
+./get_inception_model.sh
+```
+
+##Sample usage
+
+Run the demo script from the command-line without invoking matlab GUI:
+
+```bash
+matlab -nodisplay -nojvm -nosplash -nodesktop -r "run('./demo.m'), exit(0)"
+```
+or the script may be run from the matlab GUI as usual.
+
+The script has the following components:
+
+- Load model
+  
+  ```matlab
+  model = mxnet.model;
+  model.load('data/Inception-BN', 126);
+  ```
+
+- Load data and normalise.  Here we assume a fixed value of 120 as mean image:
 
   ```matlab
   img = single(imresize(imread('cat.png'), [224 224])) - 120;
-  model = mxnet.model;
-  model.load('model/Inception_BN', 39);
   ```
 
 - Get prediction:
@@ -18,13 +45,14 @@ The only requirment is build mxnet to get `lib/libmxnet.so`. Sample usage
   pred = model.forward(img);
   ```
 
-- Do feature extraction on GPU 0:
+- Do feature extraction on CPU or GPU 0:
 
   ```matlab
-  feas = model.forward(img, 'gpu', 0, {'max_pool_5b_pool', 'global_pool', 'fc'});
+  feas = model.forward(img, {'max_pool_5b_pool', 'global_pool', 'fc1'});           % CPU mode
+  feas = model.forward(img, 'gpu', 0, {'max_pool_5b_pool', 'global_pool', 'fc1'}); % GPU mode
   ```
 
-- See [demo.m](demo.m) for more examples
+- See [demo.m](demo.m) for more details
 
 ### Note on Implementation
 
@@ -38,13 +66,13 @@ X = zeros([2,3,4,5]);
 ```
 
 If we pass the memory of `X` into MXNet, then the correct shape will be
-`[5,4,3,2]` in MXNet. When processing images, MXNet assumes the data layout is
+`[5,4,3,2]` in MXNet. When processing images, MXNet assumes the data layout isformat
 
 ```c++
 example x channel x width x height
 ```
 
-while in matlab we often store images by
+while in matlab we often store images in
 
 ```matlab
 width x height x channel x example
