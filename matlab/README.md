@@ -94,7 +94,7 @@ passing `X` into MXNet.
 
 1. You may get the error `GLIBCXX_x.x.xx` is not found. Such as on Ubuntu 14.04:
 
-    ```bash
+    ```
     > In loadlibrary (line 359)
     Error using loadlibrary (line 447)
     There was an error loading the library "/home/muli/work/mxnet/lib/libmxnet.so"
