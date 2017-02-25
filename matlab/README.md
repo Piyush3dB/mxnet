@@ -4,34 +4,34 @@
 
 MXNet needs to be built so that the `lib/libmxnet.so` is available, which can be done by:
 
-```bash
-cd ..
-make
-```
+    ```bash
+    cd ..
+    make
+    ```
 The pre-trained `Inception-BN` should be downloaded to obtain the symbol and network parameters.
 
-```bash
-./get_inception_model.sh
-```
+    ```bash
+    ./get_inception_model.sh
+    ```
 
 This data will be saved in the `./data` folder:
 
-```bash
-./data/
-├── cat.png
-├── Inception-BN-0126.params
-├── Inception-BN-symbol.json
-└── synset.txt
-```
+    ```bash
+    ./data/
+    ├── cat.png
+    ├── Inception-BN-0126.params
+    ├── Inception-BN-symbol.json
+    └── synset.txt
+    ```
 
 ####Sample usage
 
-Run the demo script from the command-line without invoking matlab GUI:
+Run the demo script from the command-line without invoking Matlab GUI:
 
-```bash
-matlab -nodisplay -nojvm -nosplash -nodesktop -r "run('./demo.m'), exit(0);"
-```
-or the script may be run from the matlab GUI as usual.
+    ```bash
+    matlab -nodisplay -nojvm -nosplash -nodesktop -r "run('./demo.m'), exit(0);"
+    ```
+or the script may be run from the Matlab GUI as usual.
 
 The script has the following components:
 
@@ -42,10 +42,10 @@ The script has the following components:
   model.load('data/Inception-BN', 126);
   ```
 
-- Load data and normalise.  Here we assume a fixed value of 120 as mean image:
+- Load data and normalise.  Here we assume a fixed value of 120 as 'mean image':
 
   ```matlab
-  img = single(imresize(imread('cat.png'), [224 224])) - 120;
+  img = single(imresize(imread('./data/cat.png'), [224 224])) - 120;
   ```
 
 - Get prediction:
@@ -67,24 +67,24 @@ The script has the following components:
 
 We use `loadlibrary` to load mxnet library directly into Matlab and `calllib` to
 call MXNet functions. Note that Matlab uses the column-major to store N-dim
-arraies while and MXNet uses the row-major. So assume we create an array in
-matlab with
+arrays while and MXNet uses the row-major. So assume we create an array in
+Matlab with
 
 ```matlab
 X = zeros([2,3,4,5]);
 ```
 
 If we pass the memory of `X` into MXNet, then the correct shape will be
-`[5,4,3,2]` in MXNet. When processing images, MXNet assumes the data layout isformat
+`[5,4,3,2]` in MXNet. When processing images, MXNet assumes the data layout is
 
-```c++
-example x channel x width x height
+```
+batchSize x channel x width x height
 ```
 
-while in matlab we often store images in
+while in Matlab we often store images in
 
-```matlab
-width x height x channel x example
+```
+width x height x channel x batchSize
 ```
 
 So we should permute the dimensions by `X = permute(X, [2, 1, 3, 4])` before
