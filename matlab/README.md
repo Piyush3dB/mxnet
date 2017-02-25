@@ -1,4 +1,4 @@
-# MATLAB binding for mxnet
+# MATLAB binding for MXNet
 
 ### How to use
 
@@ -94,7 +94,7 @@ passing `X` into MXNet.
 
 1. You may get the error `GLIBCXX_x.x.xx` is not found. Such as on Ubuntu 14.04:
 
-```
+```bash
 > In loadlibrary (line 359)
 Error using loadlibrary (line 447)
 There was an error loading the library "/home/muli/work/mxnet/lib/libmxnet.so"
@@ -116,3 +116,7 @@ Caused by:
 muli@ghc:/usr/local/MATLAB/R2015a/sys/os/glnxa64$ sudo rm -r libstdc++.so.6
 muli@ghc:/usr/local/MATLAB/R2015a/sys/os/glnxa64$ sudo ln -s /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.19 libstdc++.so.6
 ```
+
+1. Matlab binding has been tested and works with the following version:
+
+    `R2016b (9.1.0.441655) 64-bit (glnxa64)`
