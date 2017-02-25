@@ -4,33 +4,33 @@
 
 MXNet needs to be built so that the `lib/libmxnet.so` is available, which can be done by:
 
-    ```bash
-    cd ..
-    make
-    ```
+```bash
+cd ..
+make
+```
 The pre-trained `Inception-BN` should be downloaded to obtain the symbol and network parameters.
 
-    ```bash
-    ./get_inception_model.sh
-    ```
+```bash
+./get_inception_model.sh
+```
 
 This data will be saved in the `./data` folder:
 
-    ```bash
-    ./data/
-    ├── cat.png
-    ├── Inception-BN-0126.params
-    ├── Inception-BN-symbol.json
-    └── synset.txt
-    ```
+```bash
+./data/
+├── cat.png
+├── Inception-BN-0126.params
+├── Inception-BN-symbol.json
+└── synset.txt
+```
 
 ####Sample usage
 
 Run the demo script from the command-line without invoking Matlab GUI:
 
-    ```bash
-    matlab -nodisplay -nojvm -nosplash -nodesktop -r "run('./demo.m'), exit(0);"
-    ```
+```bash
+matlab -nodisplay -nojvm -nosplash -nodesktop -r "run('./demo.m'), exit(0);"
+```
 or the script may be run from the Matlab GUI as usual.
 
 The script has the following components:
