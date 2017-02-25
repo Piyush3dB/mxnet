@@ -1,4 +1,4 @@
-%% Assumes model symbol and parameters downloaded using .sh script
+%% Assumes model symbol and parameters already downloaded using .sh script
 
 %% Load the model
 clear model
