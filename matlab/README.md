@@ -24,7 +24,7 @@ This data will be saved in the `./data` folder:
 └── synset.txt
 ```
 
-##Sample usage
+####Sample usage
 
 Run the demo script from the command-line without invoking matlab GUI:
 
