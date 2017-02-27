@@ -172,3 +172,6 @@ def _init_ndarray_module(ndarray_class, root_namespace):
             setattr(module_internal, function.__name__, function)
         else:
             setattr(module_obj, function.__name__, function)
+
+    #import pdb as pdb
+    #pdb.set_trace()

@@ -28,6 +28,8 @@ class SymbolBase(object):
         handle : SymbolHandle
             the handle to the underlying C++ Symbol
         """
+        #import pdb as pdb
+        #pdb.set_trace()
         self.handle = handle
 
     def __del__(self):

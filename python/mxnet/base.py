@@ -73,6 +73,14 @@ def check_call(ret):
     ret : int
         return value from API calls
     """
+
+    #import traceback
+    #import pdb as pdb
+    #pdb.set_trace()
+
+    #print ' '
+    print '+++ check_call(ret)'
+    #traceback.print_stack()
     if ret != 0:
         raise MXNetError(py_str(_LIB.MXGetLastError()))
 

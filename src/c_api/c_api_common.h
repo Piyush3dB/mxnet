@@ -16,7 +16,7 @@
 #include <string>
 
 /*! \brief  macro to guard beginning and end section of all functions */
-#define API_BEGIN() try {
+#define API_BEGIN() try { printf("%s, %s, %d\n",__FILE__, __FUNCTION__, __LINE__ );
 /*! \brief every function starts with API_BEGIN();
      and finishes with API_END() or API_END_HANDLE_ERROR */
 #define API_END() } catch(dmlc::Error &_except_) { return MXAPIHandleException(_except_); } return 0;  // NOLINT(*)

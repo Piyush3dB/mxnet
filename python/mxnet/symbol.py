@@ -12,6 +12,8 @@ import os as _os
 import sys as _sys
 import numpy as _numpy
 
+import pdb as pdb
+
 from .base import _LIB, numeric_types
 from .base import c_array, c_str, mx_uint, py_str, string_types, mx_real_t
 from .base import NDArrayHandle, ExecutorHandle, SymbolHandle
@@ -380,6 +382,8 @@ class Symbol(SymbolBase):
         handle = SymbolHandle()
         check_call(_LIB.MXSymbolGetInternals(
             self.handle, ctypes.byref(handle)))
+
+        #qpdb.set_trace()
         return Symbol(handle=handle)
 
     def get_children(self):
@@ -1126,6 +1130,8 @@ def load_json(json_str):
     if not isinstance(json_str, string_types):
         raise TypeError('fname need to be string')
     handle = SymbolHandle()
+    import pdb as pdb
+    pdb.set_trace()
     check_call(_LIB.MXSymbolCreateFromJSON(c_str(json_str), ctypes.byref(handle)))
     return Symbol(handle)
 
