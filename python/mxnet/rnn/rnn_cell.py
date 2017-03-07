@@ -443,7 +443,7 @@ class LSTMCell(BaseRNNCell):
 
 
 class RWACell(BaseRNNCell):
-    """Recurrent Weighted Average cell.
+    """Recurrent Weighted Average (RWA) cell.
 
     Parameters
     ----------
@@ -467,7 +467,7 @@ class RWACell(BaseRNNCell):
     @property
     def state_shape(self):
         """shape(s) of states"""
-        return [(0, self._num_hidden), (0, self._num_hidden)]
+        return [(0, self._num_hidden), (0, self._num_hidden), (0, self._num_hidden)]
 
     def unpack_weights(self, args):
         """Unpack fused weight matrices into separate
@@ -544,32 +544,29 @@ class RWACell(BaseRNNCell):
         states : Symbol
             state to next step of RNN.
         """
+
+        hiddenState = states[0]
+        cellState   = states[1]
+
         self._counter += 1
         name = '%st%d_'%(self._prefix, self._counter)
         i2h = symbol.FullyConnected(data=inputs, weight=self._iW, bias=self._iB,
                                     num_hidden=self._num_hidden*4,
                                     name='%si2h'%name)
-        h2h = symbol.FullyConnected(data=states[0], weight=self._hW, bias=self._hB,
+        h2h = symbol.FullyConnected(data=hiddenState, weight=self._hW, bias=self._hB,
                                     num_hidden=self._num_hidden*4,
                                     name='%sh2h'%name)
         gates = i2h + h2h
-        slice_gates = symbol.SliceChannel(gates, num_outputs=4,
-                                          name="%sslice"%name)
-        in_gate = symbol.Activation(slice_gates[0], act_type="sigmoid",
-                                    name='%si'%name)
-        forget_gate = symbol.Activation(slice_gates[1], act_type="sigmoid",
-                                        name='%sf'%name)
-        in_transform = symbol.Activation(slice_gates[2], act_type="tanh",
-                                         name='%sc'%name)
-        out_gate = symbol.Activation(slice_gates[3], act_type="sigmoid",
-                                     name='%so'%name)
-        next_c = symbol._internal._plus(forget_gate * states[1], in_gate * in_transform,
-                                        name='%sstate'%name)
-        next_h = symbol._internal._mul(out_gate, symbol.Activation(next_c, act_type="tanh"),
-                                       name='%sout'%name)
+        slice_gates  = symbol.SliceChannel(gates, num_outputs=4, name="%sslice"%name)
+        in_gate      = symbol.Activation(slice_gates[0], act_type="sigmoid", name='%si'%name)
+        forget_gate  = symbol.Activation(slice_gates[1], act_type="sigmoid", name='%sf'%name)
+        in_transform = symbol.Activation(slice_gates[2], act_type="tanh", name='%sc'%name)
+        out_gate     = symbol.Activation(slice_gates[3], act_type="sigmoid", name='%so'%name)
+        
+        next_c = symbol._internal._plus(forget_gate * cellState, in_gate * in_transform, name='%sstate'%name)
+        next_h = symbol._internal._mul(out_gate, symbol.Activation(next_c, act_type="tanh"), name='%sout'%name)
 
         return next_h, [next_h, next_c]
-
 
 
 
@@ -805,6 +802,8 @@ class FusedRNNCell(BaseRNNCell):
             outputs = symbol.SwapAxis(outputs, dim1=0, dim2=1)
 
         return outputs, states
+
+
 
 
 class SequentialRNNCell(BaseRNNCell):

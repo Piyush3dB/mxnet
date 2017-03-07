@@ -6,6 +6,7 @@ pds = pdb.set_trace
 
 import sys
 sys.path.append('/v/home/epiyusi/private/Downloads/github/mxnetUtils')
+sys.path.append('../../../../mxnet-utils')
 from mxnetUtils import printStats, _str2tuple, net2dot
 
 shape = {}
@@ -30,18 +31,55 @@ def test_lstm():
     args, outs, auxs = outputs.infer_shape(rnn_t0_data=(10,50), rnn_t1_data=(10,50), rnn_t2_data=(10,50))
     assert outs == [(10, 100), (10, 100), (10, 100)]
 
+
+def test_min_scalar():
+    inputs = mx.symbol.Variable('data')
+    next_c = mx.symbol._internal._minimum_scalar(inputs, scalar=1, name='state')
+    net = next_c
+    #net = inputs
+    executor = net.bind(mx.cpu(), {'data': mx.nd.array([0, 0.9, 1.1, 2, 3]) })
+    res = executor.forward()
+    print(res[0].asnumpy())
+
+
+_num_hidden = 100
+_num_unroll = 1
+
+def test_rwa0():
+    cell = mx.rnn.RWACell(_num_hidden, prefix='rwa_')
+    net, _ = cell.unroll(_num_unroll, input_prefix='rwa_')
+
+    net = net[0]
+
+    shape["rwa_t0_data"] = (16,50)
+    printStats(net, shape=shape)
+
+    v = net2dot(net, shape=shape)
+    v.render('RWA')
+
+    pds()
+
+    
 def test_rwa():
 
     inputs = mx.symbol.Variable('data')
-    next_c = mx.symbol._internal._minimum_scalar(inputs, scalar=1, name='state')
 
-    net = next_c
+    name =  'testName' #'%st%d_'%(self._prefix, self._counter)
+    i2h = mx.symbol.FullyConnected(data=inputs, num_hidden=_num_hidden, name=name)
+
+    next_c = mx.symbol._internal._minimum_scalar(i2h, scalar=1, name='state')
+
+    net = mx.symbol.exp(-next_c)
+
+    #net = next_c
     #net = inputs
 
-    executor = net.bind(mx.cpu(), {'data': mx.nd.array([0, 0.9, 1.1, 2, 3]) })
+    #executor = net.bind(mx.cpu(), {'data': mx.nd.array([0, 0.9, 1.1, 2, 3]) })
 
-    res = executor.forward()
-    print(res[0].asnumpy())
+    #res = executor.forward()
+    #print(res[0].asnumpy())
+
+    #print net.tojson()
 
 
 
@@ -49,11 +87,10 @@ def test_rwa():
     shape["data"] = (10,100)
     printStats(net, shape=shape)
 
-    pds()
+    v = net2dot(net, shape=shape)
+    v.render('RWA.pdf')
 
-
-
-
+    #pds()
 
     return
 
@@ -87,5 +124,6 @@ def test_stack():
 if __name__ == '__main__':
     #test_rnn()
     #test_lstm()
-    test_rwa()
+    #test_min_scalar()
+    test_rwa0()
     #test_stack()
