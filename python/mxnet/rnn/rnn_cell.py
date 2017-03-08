@@ -464,6 +464,22 @@ class RWACell(BaseRNNCell):
         self._hW = self.params.get('h2h_weight')
         self._hB = self.params.get('h2h_bias')
 
+
+        self._i2uW = self.params.get('i2u_weight')
+        self._i2uB = self.params.get('i2u_bias')
+
+        self._i2gW = self.params.get('i2g_weight')
+        self._i2gB = self.params.get('i2g_bias')
+
+        self._i2aW = self.params.get('i2a_weight')
+        self._i2aB = self.params.get('i2a_bias')
+
+        self._h2gW = self.params.get('h2g_weight')
+        self._h2gB = self.params.get('h2g_bias')
+
+        self._h2aW = self.params.get('h2a_weight')
+        self._h2aB = self.params.get('h2a_bias')
+
     @property
     def state_shape(self):
         """shape(s) of states"""
@@ -545,28 +561,64 @@ class RWACell(BaseRNNCell):
             state to next step of RNN.
         """
 
-        hiddenState = states[0]
-        cellState   = states[1]
+        hState = states[0]
+        nState = states[1]
+        dState = states[2]
 
         self._counter += 1
         name = '%st%d_'%(self._prefix, self._counter)
-        i2h = symbol.FullyConnected(data=inputs, weight=self._iW, bias=self._iB,
-                                    num_hidden=self._num_hidden*4,
-                                    name='%si2h'%name)
-        h2h = symbol.FullyConnected(data=hiddenState, weight=self._hW, bias=self._hB,
-                                    num_hidden=self._num_hidden*4,
-                                    name='%sh2h'%name)
-        gates = i2h + h2h
-        slice_gates  = symbol.SliceChannel(gates, num_outputs=4, name="%sslice"%name)
-        in_gate      = symbol.Activation(slice_gates[0], act_type="sigmoid", name='%si'%name)
-        forget_gate  = symbol.Activation(slice_gates[1], act_type="sigmoid", name='%sf'%name)
-        in_transform = symbol.Activation(slice_gates[2], act_type="tanh", name='%sc'%name)
-        out_gate     = symbol.Activation(slice_gates[3], act_type="sigmoid", name='%so'%name)
-        
-        next_c = symbol._internal._plus(forget_gate * cellState, in_gate * in_transform, name='%sstate'%name)
-        next_h = symbol._internal._mul(out_gate, symbol.Activation(next_c, act_type="tanh"), name='%sout'%name)
 
-        return next_h, [next_h, next_c]
+        u = symbol.FullyConnected(data=inputs, weight=self._i2uW, bias=self._i2uB, num_hidden=self._num_hidden, name='%si2u'%name)
+        
+        i2g = symbol.FullyConnected(data=inputs, weight=self._i2gW, bias=self._i2gB, num_hidden=self._num_hidden, name='%si2g'%name)
+        i2a = symbol.FullyConnected(data=inputs, weight=self._i2aW, bias=self._i2aB, num_hidden=self._num_hidden, name='%si2a'%name)
+    
+        h2g = symbol.FullyConnected(data=hState, weight=self._h2gW, bias=self._h2gB, num_hidden=self._num_hidden, name='%sh2g'%name)
+        h2a = symbol.FullyConnected(data=hState, weight=self._h2aW, bias=self._h2aB, num_hidden=self._num_hidden, name='%sh2a'%name)
+
+        g = i2g + h2g
+        q = i2a + h2a
+
+        q_greater = symbol._internal._minimum_scalar(q, scalar=0, name='state')
+
+        scale   = symbol.exp(-q_greater)
+        a_scale = symbol.exp(q-q_greater)
+
+
+
+        n     = symbol._internal._mul(nState, scale) + symbol._internal._mul(symbol._internal._mul(u, symbol.Activation(g, act_type="tanh")), a_scale)
+        d     = symbol._internal._mul(dState, scale)+a_scale
+        h_new = symbol.Activation(symbol._internal._div(n, d), act_type="tanh", name='%sc'%name)
+
+
+##
+##       z = symbol._internal._mul(inputs, symbol.Activation(g, act_type="tanh"), name='%sout'%name)
+
+##       z_ = symbol._internal._mul(z, **, name='%sout'%name)
+
+
+##    next_c = symbol._internal._minimum_scalar(i2h, scalar=1, name='state')
+##    net = symbol.exp(-next_c)
+
+##       next_n = symbol._internal._plus(nState, , name='%sstate'%name)
+
+
+##       
+
+##       h2h = symbol.FullyConnected(data=hiddenState, weight=self._hW, bias=self._hB,
+##                                   num_hidden=self._num_hidden*4,
+##                                   name='%sh2h'%name)
+##       gates = i2h + h2h
+##       slice_gates  = symbol.SliceChannel(gates, num_outputs=4, name="%sslice"%name)
+##       in_gate      = symbol.Activation(slice_gates[0], act_type="sigmoid", name='%si'%name)
+##       forget_gate  = symbol.Activation(slice_gates[1], act_type="sigmoid", name='%sf'%name)
+##       in_transform = symbol.Activation(slice_gates[2], act_type="tanh", name='%sc'%name)
+##       out_gate     = symbol.Activation(slice_gates[3], act_type="sigmoid", name='%so'%name)
+##       
+##       next_c = symbol._internal._plus(forget_gate * cellState, in_gate * in_transform, name='%sstate'%name)
+##       next_h = symbol._internal._mul(out_gate, symbol.Activation(next_c, act_type="tanh"), name='%sout'%name)
+
+        return h_new, [h_new, n, d]
 
 
 

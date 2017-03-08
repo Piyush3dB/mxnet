@@ -46,13 +46,15 @@ _num_hidden = 100
 _num_unroll = 1
 
 def test_rwa0():
-    cell = mx.rnn.RWACell(_num_hidden, prefix='rwa_')
+    cell   = mx.rnn.RWACell(_num_hidden, prefix='rwa_')
     net, _ = cell.unroll(_num_unroll, input_prefix='rwa_')
 
     net = net[0]
 
     shape["rwa_t0_data"] = (16,50)
     printStats(net, shape=shape)
+
+
 
     #v = net2dot(net, shape=shape)
     #v.render('RWA')
