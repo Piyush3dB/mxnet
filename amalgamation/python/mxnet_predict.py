@@ -6,6 +6,8 @@ This is for prediction only, use mxnet python package instead for most tasks.
 """
 from __future__ import absolute_import
 
+import datetime as dt
+
 import os
 import sys
 import ctypes
@@ -31,8 +33,7 @@ def _find_lib_path():
     curr_path = os.path.dirname(os.path.abspath(os.path.expanduser(__file__)))
     api_path = os.path.join(curr_path, '../../lib/')
     dll_path = [curr_path, api_path]
-    dll_path = [os.path.join(p, 'libmxnet.so') for p in dll_path] + \
-        [os.path.join(p, 'libmxnet_predict.so') for p in dll_path]
+    dll_path = [os.path.join(p, 'libmxnet_predict.so') for p in dll_path]
     lib_path = [p for p in dll_path if os.path.exists(p) and os.path.isfile(p)]
     if len(lib_path) == 0:
         raise RuntimeError('Cannot find the files.\n' +
@@ -53,6 +54,10 @@ def _check_call(ret):
     """Check the return value of API."""
     if ret != 0:
         raise RuntimeError(py_str(_LIB.MXGetLastError()))
+
+def calcTime(t0, t1):
+    return t1-t0
+
 
 _LIB = _load_lib()
 # type definitions
@@ -100,6 +105,8 @@ class Predictor(object):
         handle = PredictorHandle()
         param_raw_bytes = bytearray(param_raw_bytes)
         ptr = (ctypes.c_char * len(param_raw_bytes)).from_buffer(param_raw_bytes)
+        
+        t0 = dt.datetime.now()
         _check_call(_LIB.MXPredCreate(
             c_str(symbol_file),
             ptr, len(param_raw_bytes),
@@ -109,6 +116,9 @@ class Predictor(object):
             c_array(mx_uint, indptr),
             c_array(mx_uint, sdata),
             ctypes.byref(handle)))
+        
+        self.tCreate = calcTime(t0, dt.datetime.now())
+
         self.handle = handle
 
     def __del__(self):
@@ -131,11 +141,18 @@ class Predictor(object):
             if not isinstance(v, np.ndarray):
                 raise ValueError("Expect numpy ndarray as input")
             v = np.ascontiguousarray(v, dtype=np.float32)
+
+            t0 = dt.datetime.now()
             _check_call(_LIB.MXPredSetInput(
                 self.handle, c_str(k),
                 v.ctypes.data_as(mx_float_p),
                 mx_uint(v.size)))
+            self.tSetInput = calcTime(t0, dt.datetime.now())
+
+        t0 = dt.datetime.now()
         _check_call(_LIB.MXPredForward(self.handle))
+        self.tPredFwd = calcTime(t0, dt.datetime.now())
+
 
     def get_output(self, index):
         """Get the index-th output.
@@ -208,3 +225,47 @@ def load_ndarray_file(nd_bytes):
         return arrs
     else:
         return {keys[i] : arrs[i] for i in range(len(keys))}
+
+
+import pdb as pdb
+pds = pdb.set_trace
+
+def testForwarder(symbol_file, param_file, data_shape):
+
+    import numpy as np
+
+    inData = np.zeros(data_shape)
+    print "data created"
+    
+    predictor = Predictor(open(symbol_file, "r").read(),
+                          open(param_file, "rb").read(),
+                          {'data':data_shape})
+
+    predictor.forward(data=inData)
+
+    print data_shape
+    print ("CREATE=%5d,%5d  SET=%5d,%5d  FWD=%d5,%5d\n") % (predictor.tCreate.seconds,predictor.tCreate.microseconds,  predictor.tSetInput.seconds,predictor.tSetInput.microseconds,  predictor.tPredFwd.seconds,predictor.tPredFwd.microseconds)
+
+
+
+
+
+if __name__ == '__main__':
+
+    symbFile  = './models/Inception-BN-symbol.json'
+    paramFile = './models/Inception-BN-0126.params'
+
+
+    #t0 = dt.datetime.now()
+    #time.sleep(10)
+    #t1 = dt.datetime.now()
+    #t = t1-t0
+    #pds()
+
+    for i in range(1, 10):
+        data_shape = (2**i, 3, 224, 224)
+        testForwarder(symbFile, paramFile, data_shape)
+    
+
+    #t1 = time.clock()
+    #(t1 - t0)*1000.0 / iterations
