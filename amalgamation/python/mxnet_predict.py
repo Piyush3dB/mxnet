@@ -7,11 +7,19 @@ This is for prediction only, use mxnet python package instead for most tasks.
 from __future__ import absolute_import
 
 import datetime as dt
-
+import argparse
 import os
 import sys
 import ctypes
 import numpy as np
+
+ 
+def parseOptions():
+    parser = argparse.ArgumentParser(description='Run models using MXNet prediction.')
+    parser.add_argument('-model', default='squeezenet', dest='model', help='[squeezenet], [inceptionbn], [resnet], [nin]')
+    args = parser.parse_args()
+    return args
+
 
 __all__ = ["Predictor", "load_ndarray_file"]
 
@@ -236,7 +244,7 @@ def testForwarder(symbol_file, param_file, data_shape):
 
     inData = np.zeros(data_shape)
     print "data created"
-    
+
     predictor = Predictor(open(symbol_file, "r").read(),
                           open(param_file, "rb").read(),
                           {'data':data_shape})
@@ -244,28 +252,53 @@ def testForwarder(symbol_file, param_file, data_shape):
     predictor.forward(data=inData)
 
     print data_shape
-    print ("CREATE=%5d,%5d  SET=%5d,%5d  FWD=%d5,%5d\n") % (predictor.tCreate.seconds,predictor.tCreate.microseconds,  predictor.tSetInput.seconds,predictor.tSetInput.microseconds,  predictor.tPredFwd.seconds,predictor.tPredFwd.microseconds)
+    #print ("CREATE=%5d,%5d  SET=%5d,%5d  FWD=%d5,%5d\n") % (predictor.tCreate.total_seconds(),
+    #                                                        predictor.tCreate.microseconds,  
+    #                                                        predictor.tSetInput.total_seconds(),
+    #                                                        predictor.tSetInput.microseconds,  
+    #                                                        predictor.tPredFwd.total_seconds(),
+    #                                                        predictor.tPredFwd.microseconds)
+
+    #print predictor.tCreate
+    #print predictor.tSetInput
+    print predictor.tPredFwd
+
+    print " "
 
 
 
-
+import time
 
 if __name__ == '__main__':
 
-    symbFile  = './models/Inception-BN-symbol.json'
-    paramFile = './models/Inception-BN-0126.params'
+    args = parseOptions()
 
+    if args.model == 'inceptionbn':
+        symbFile  = './models/Inception-BN-symbol.json'
+        paramFile = './models/Inception-BN-0126.params'
+
+    if args.model == 'resnet':
+        symbFile  = './models/resnet-18-symbol.json'
+        paramFile = './models/resnet-18-0000.params'
+
+    if args.model == "nin":
+        symbFile  = './models/nin-symbol.json'
+        paramFile = './models/nin-0000.params'
+
+    if args.model == 'squeezenet':
+        symbFile  = './models/squeezenet_v1.0-symbol.json'
+        paramFile = './models/squeezenet_v1.0-0000.params'
+
+
+
+    for i in range(0, 10):
+        batchSize = 2**i
+        data_shape = (batchSize, 3, 224, 224)
+        testForwarder(symbFile, paramFile, data_shape)
+    
 
     #t0 = dt.datetime.now()
     #time.sleep(10)
     #t1 = dt.datetime.now()
     #t = t1-t0
     #pds()
-
-    for i in range(1, 10):
-        data_shape = (2**i, 3, 224, 224)
-        testForwarder(symbFile, paramFile, data_shape)
-    
-
-    #t1 = time.clock()
-    #(t1 - t0)*1000.0 / iterations
